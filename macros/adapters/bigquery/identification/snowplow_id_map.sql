@@ -29,7 +29,7 @@ new_sessions as (
         domain_sessionid
 
     from all_events
-    where DATE(collector_tstamp) >= '{{ start_date }}'
+    where DATE(TIMESTAMP(collector_tstamp)) >= '{{ start_date }}'
 
 ),
 
