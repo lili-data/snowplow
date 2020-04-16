@@ -29,7 +29,7 @@ with all_events as (
 
     -- load up events from the start date, and the day before it, to ensure
     -- that we capture pageviews that span midnight
-    where DATE(collector_tstamp) >= date_sub('{{ start_date }}', interval 1 day)
+    where DATE(cast(collector_tstamp as timestamp)) >= date_sub('{{ start_date }}', interval 1 day)
 
 ),
 
@@ -166,7 +166,7 @@ page_views as (
         dvce_type as type,
         dvce_ismobile as is_mobile
     ) as device
-    
+
     {%- if var('snowplow:pass_through_columns') | length > 0 %}
     , struct(
         {{ var('snowplow:pass_through_columns') | join(',\n') }}

@@ -19,7 +19,7 @@ with all_events as (
 
     select *
     from {{ ref('snowplow_base_events') }}
-    where DATE(TIMESTAMP(collector_tstamp)) >= date_sub('{{ start_date }}', interval 1 day)
+    where DATE(cast(collector_tstamp as timestamp)) >= date_sub('{{ start_date }}', interval 1 day)
 
 ),
 
@@ -29,7 +29,7 @@ new_sessions as (
         domain_sessionid
 
     from all_events
-    where DATE(TIMESTAMP(collector_tstamp)) >= '{{ start_date }}'
+    where DATE(cast(collector_tstamp as timestamp)) >= '{{ start_date }}'
 
 ),
 
@@ -61,7 +61,7 @@ prep as (
             rows between unbounded preceding and unbounded following
         ) as user_id,
 
-        max(timestamp(collector_tstamp)) over (
+        max(cast(collector_tstamp as timestamp)) over (
             partition by domain_userid
         ) as max_tstamp
 
