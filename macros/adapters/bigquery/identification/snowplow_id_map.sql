@@ -19,7 +19,7 @@ with all_events as (
 
     select *
     from {{ ref('snowplow_base_events') }}
-    where DATE(collector_tstamp) >= date_sub('{{ start_date }}', interval 1 day)
+    where DATE(TIMESTAMP(collector_tstamp)) >= date_sub('{{ start_date }}', interval 1 day)
 
 ),
 
