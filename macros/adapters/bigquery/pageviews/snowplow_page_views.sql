@@ -41,7 +41,7 @@ new_sessions as (
     from all_events
 
     -- only consider events for sessions that occurred on or after the start_date
-    where DATE(collector_tstamp) >= '{{ start_date }}'
+    where DATE(cast(collector_tstamp as timestamp)) >= '{{ start_date }}'
 
 ),
 
