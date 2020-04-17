@@ -149,10 +149,13 @@ page_views as (
       geo_zipcode as zipcode
     ) as geo,
 
+
+    -- Override device and os values from enrichment https://github.com/snowplow/snowplow/wiki/YAUAA-enrichment
     struct(
-      os_family as family,
-      os_manufacturer as manufacturer,
-      os_name as name,
+      `liligo-conversion-237810`.analytics.CUSTOM_JSON_EXTRACT(derived_contexts, "$.data[?(@.schema == 'iglu:nl.basjes/yauaa_context/jsonschema/1-0-0')].data.operatingSystemClass") as family,
+      `liligo-conversion-237810`.analytics.CUSTOM_JSON_EXTRACT(derived_contexts, "$.data[?(@.schema == 'iglu:nl.basjes/yauaa_context/jsonschema/1-0-0')].data.deviceBrand") as manufacturer,
+      `liligo-conversion-237810`.analytics.CUSTOM_JSON_EXTRACT(derived_contexts, "$.data[?(@.schema == 'iglu:nl.basjes/yauaa_context/jsonschema/1-0-0')].data.operatingSystemName") as name,
+      `liligo-conversion-237810`.analytics.CUSTOM_JSON_EXTRACT(derived_contexts, "$.data[?(@.schema == 'iglu:nl.basjes/yauaa_context/jsonschema/1-0-0')].data.operatingSystemVersion") as version,
       os_timezone as timezone
     ) as os,
 
@@ -162,10 +165,22 @@ page_views as (
     -- TODO : perf_timing
 
     struct(
-        br_renderengine as browser_engine,
-        dvce_type as type,
-        dvce_ismobile as is_mobile
+        `liligo-conversion-237810`.analytics.CUSTOM_JSON_EXTRACT(derived_contexts, "$.data[?(@.schema == 'iglu:nl.basjes/yauaa_context/jsonschema/1-0-0')].data.agentName") as browser_engine,
+        `liligo-conversion-237810`.analytics.CUSTOM_JSON_EXTRACT(derived_contexts, "$.data[?(@.schema == 'iglu:nl.basjes/yauaa_context/jsonschema/1-0-0')].data.deviceClass") as type,
+        if(`liligo-conversion-237810`.analytics.CUSTOM_JSON_EXTRACT(derived_contexts, "$.data[?(@.schema == 'iglu:nl.basjes/yauaa_context/jsonschema/1-0-0')].data.operatingSystemClass")='Mobile',TRUE,FALSE) as is_mobile,
+        `liligo-conversion-237810`.analytics.CUSTOM_JSON_EXTRACT(derived_contexts, "$.data[?(@.schema == 'iglu:nl.basjes/yauaa_context/jsonschema/1-0-0')].data.deviceName") as name,
+        `liligo-conversion-237810`.analytics.CUSTOM_JSON_EXTRACT(derived_contexts, "$.data[?(@.schema == 'iglu:nl.basjes/yauaa_context/jsonschema/1-0-0')].data.webviewAppName") as app_name,
+        `liligo-conversion-237810`.analytics.CUSTOM_JSON_EXTRACT(derived_contexts, "$.data[?(@.schema == 'iglu:nl.basjes/yauaa_context/jsonschema/1-0-0')].data.agentName") as agent
     ) as device
+
+    case
+      when br_family = 'Robot/Spider'
+          or {% set bad_agents_psv = bot_any()|join('|') %}
+          not regexp_contains(LOWER(useragent), '^.*({{bad_agents_psv}}).*$')
+          or useragent is null then TRUE
+      else FALSE
+    end as isbot
+
 
     {%- if var('snowplow:pass_through_columns') | length > 0 %}
     , struct(
@@ -175,12 +190,6 @@ page_views as (
 
   from events
   where event = 'page_view'
-    and (br_family != 'Robot/Spider' or br_family is null)
-    and (
-        {% set bad_agents_psv = bot_any()|join('|') %}
-        not regexp_contains(LOWER(useragent), '^.*({{bad_agents_psv}}).*$')
-        or useragent is null
-    )
     and domain_userid is not null
     and domain_sessionidx > 0
 
