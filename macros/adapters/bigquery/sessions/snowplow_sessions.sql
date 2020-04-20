@@ -3,8 +3,9 @@
 
 {{
     config(
-        materialized='table',
-        partition_by='DATE(session_start)'
+        materialized='incremental',
+        partition_by='dt',
+        incremental_strategy = "insert_overwrite",
     )
 }}
 
@@ -34,7 +35,8 @@ stitched as (
 
 select
     * except(session_index),
-    row_number() over (partition by inferred_user_id order by session_start) as session_index
+    row_number() over (partition by inferred_user_id order by session_start) as session_index,
+    DATE(session_start) as dt
 
 from stitched
 

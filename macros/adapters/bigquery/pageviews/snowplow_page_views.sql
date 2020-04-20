@@ -4,7 +4,7 @@
 {{
     config(
         materialized='incremental',
-        partition_by='DATE(page_view_start)',
+        partition_by='dt',
         unique_key="page_view_id"
     )
 }}
@@ -429,7 +429,8 @@ engagement as (
 
 )
 
-select *
+select *,
+Date(page_view_start) as dt
 from page_views
 join engagement using (page_view_id)
 join perf_timing using (page_view_id)
