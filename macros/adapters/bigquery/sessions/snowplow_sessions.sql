@@ -13,7 +13,7 @@ with sessions as (
 
     select * from {{ ref('snowplow_sessions_tmp') }}
 
-),
+)
 
 
 
