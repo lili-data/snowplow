@@ -22,6 +22,6 @@ select
     row_number() over (partition by user_snowplow_domain_id order by session_start) as session_index,
     DATE(session_start) as dt
 
-from stitched
+from sessions
 
 {% endmacro %}
